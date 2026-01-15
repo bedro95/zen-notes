@@ -88,7 +88,7 @@ export default function ZenNotisApp() {
             <h1 style={{ fontSize: '28px', fontWeight: 800, letterSpacing: '-1px', margin: 0 }}>Zen Notis</h1>
             <Shield size={24} color={THEME.accent} />
           </div>
-          <p style={{ color: THEME.textSecondary, fontSize: '13px', marginTop: '4px' }}>Wagmi Project Architecture</p>
+          <p style={{ color: THEME.textSecondary, fontSize: '13px', marginTop: '4px' }}>ZEN Project Architecture</p>
         </header>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
