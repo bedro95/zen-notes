@@ -5,9 +5,13 @@ import "./globals.css";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Zen-Notis | Luxury Reminders",
+  title: "Zen Notis | Luxury Reminders",
   description: "A high-end notification system for focused individuals",
   manifest: "/manifest.json",
+  icons: {
+    icon: "/icon.svg", // ربط الأيقونة الزجاجية
+    apple: "/icon.svg", // لضمان ظهورها على iPhone
+  },
 };
 
 export const viewport: Viewport = {
@@ -15,6 +19,7 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
+  userScalable: false, // يمنع التكبير العشوائي للمحافظة على مظهر التطبيق
 };
 
 export default function RootLayout({
@@ -24,7 +29,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" dir="ltr">
-      <body className={`${inter.className} bg-[#050505] antialiased`}>
+      <body 
+        className={`${inter.className} bg-[#050505] antialiased`}
+        style={{ margin: 0, padding: 0, overflowX: 'hidden' }}
+      >
         {children}
       </body>
     </html>
