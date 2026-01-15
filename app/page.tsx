@@ -2,15 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Bell, Clock, Plus, Shield, CheckCircle2, Github } from 'lucide-react';
-
-// --- Engineering Constants & Types ---
-interface Reminder {
-  id: string;
-  note: string;
-  time: string;
-  createdAt: number;
-}
+import { Bell, Clock, Plus, Shield, CheckCircle2, Github, Trash2 } from 'lucide-react';
 
 const THEME = {
   background: '#050505',
@@ -22,215 +14,118 @@ const THEME = {
   blur: 'blur(40px)'
 };
 
+interface Reminder {
+  id: string;
+  note: string;
+  time: string;
+}
+
 export default function ZenNotisApp() {
   const [note, setNote] = useState<string>('');
   const [time, setTime] = useState<string>('');
   const [isSuccess, setIsSuccess] = useState<boolean>(false);
+  const [reminders, setReminders] = useState<Reminder[]>([]);
 
-  // --- Logic Handlers ---
   const handleSetReminder = () => {
     if (!note || !time) return;
 
+    const newReminder: Reminder = {
+      id: Math.random().toString(36).substr(2, 9),
+      note,
+      time
+    };
+
+    // Logical Trigger (Simulated for Demo)
     const now = new Date();
-    const [hours, minutes] = time.split(':').map(Number);
-    const targetDate = new Date();
-    targetDate.setHours(hours, minutes, 0, 0);
+    const [h, m] = time.split(':').map(Number);
+    const target = new Date();
+    target.setHours(h, m, 0, 0);
+    if (target <= now) target.setDate(target.getDate() + 1);
 
-    if (targetDate.getTime() <= now.getTime()) {
-      targetDate.setDate(targetDate.getDate() + 1);
-    }
-
-    const timeUntilTrigger = targetDate.getTime() - now.getTime();
-
-    // Schedule Execution
     setTimeout(() => {
-      // 1. Separate Vibration Logic (Fixed)
-      if ('vibrate' in navigator) {
-        navigator.vibrate([200, 100, 200]);
-      }
-
-      // 2. Visual Notification
+      if ('vibrate' in navigator) navigator.vibrate([200, 100, 200]);
       if ('Notification' in window && Notification.permission === 'granted') {
-        new Notification("Zen Notis", {
-          body: note,
-          icon: '/icon.png'
-        });
+        new Notification("Zen Notis", { body: note });
       } else {
-        alert(`🔔 Zen Notis: ${note}`);
+        alert(`🔔 Reminder: ${note}`);
       }
-    }, timeUntilTrigger);
+    }, target.getTime() - now.getTime());
 
+    setReminders([newReminder, ...reminders]);
     setIsSuccess(true);
     setNote('');
     setTime('');
     setTimeout(() => setIsSuccess(false), 4000);
   };
 
-  useEffect(() => {
-    if ('Notification' in window) {
-      Notification.requestPermission();
-    }
-  }, []);
+  const deleteReminder = (id: string) => {
+    setReminders(reminders.filter(r => r.id !== id));
+  };
 
   return (
-    <main style={{ 
-      backgroundColor: THEME.background, 
-      minHeight: '100vh', 
-      color: THEME.textPrimary,
-      fontFamily: 'Inter, sans-serif',
-      display: 'flex',
-      flexDirection: 'column',
-      alignItems: 'center',
-      justifyContent: 'center',
-      padding: '24px',
-      position: 'relative',
-      overflow: 'hidden'
-    }}>
+    <main style={{ backgroundColor: THEME.background, minHeight: '100vh', color: THEME.textPrimary, fontFamily: 'Inter, sans-serif', display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '40px 24px', position: 'relative', overflowX: 'hidden' }}>
       
-      <div style={{
-        position: 'absolute',
-        top: '-10%',
-        right: '-5%',
-        width: '400px',
-        height: '400px',
-        background: 'rgba(37, 99, 235, 0.1)',
-        filter: 'blur(100px)',
-        borderRadius: '100%'
-      }} />
+      {/* Glow Effect */}
+      <div style={{ position: 'absolute', top: '-10%', right: '-5%', width: '400px', height: '400px', background: 'rgba(37, 99, 235, 0.1)', filter: 'blur(100px)', borderRadius: '100%' }} />
 
-      <motion.div 
-        initial={{ opacity: 0, scale: 0.95 }}
-        animate={{ opacity: 1, scale: 1 }}
-        style={{
-          width: '100%',
-          maxWidth: '420px',
-          background: THEME.glass,
-          backdropFilter: THEME.blur,
-          WebkitBackdropFilter: THEME.blur,
-          border: `1px solid ${THEME.border}`,
-          borderRadius: '40px',
-          padding: '40px',
-          boxShadow: '0 40px 100px rgba(0,0,0,0.6)',
-          zIndex: 10
-        }}
-      >
-        <header style={{ marginBottom: '40px' }}>
+      {/* Main Form Card */}
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} style={{ width: '100%', maxWidth: '420px', background: THEME.glass, backdropFilter: THEME.blur, WebkitBackdropFilter: THEME.blur, border: `1px solid ${THEME.border}`, borderRadius: '40px', padding: '40px', boxShadow: '0 40px 100px rgba(0,0,0,0.6)', zIndex: 10 }}>
+        <header style={{ marginBottom: '32px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <h1 style={{ fontSize: '32px', fontWeight: 800, letterSpacing: '-1px', margin: 0 }}>
-              Zen Notis
-            </h1>
+            <h1 style={{ fontSize: '28px', fontWeight: 800, letterSpacing: '-1px', margin: 0 }}>Zen Notis</h1>
             <Shield size={24} color={THEME.accent} />
           </div>
-          <p style={{ color: THEME.textSecondary, fontSize: '14px', marginTop: '8px' }}>
-            Next-gen luxury reminder system.
-          </p>
         </header>
 
-        <section style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-          <div>
-            <label style={{ fontSize: '10px', fontWeight: 700, color: THEME.accent, letterSpacing: '2px', textTransform: 'uppercase', marginBottom: '8px', display: 'block' }}>
-              Note Content
-            </label>
-            <input 
-              type="text"
-              placeholder="What's on your mind?"
-              value={note}
-              onChange={(e) => setNote(e.target.value)}
-              style={{
-                width: '100%',
-                background: 'rgba(255,255,255,0.05)',
-                border: `1px solid ${THEME.border}`,
-                borderRadius: '18px',
-                padding: '16px 20px',
-                color: '#fff',
-                fontSize: '16px',
-                outline: 'none'
-              }}
-            />
-          </div>
-
-          <div>
-            <label style={{ fontSize: '10px', fontWeight: 700, color: THEME.accent, letterSpacing: '2px', textTransform: 'uppercase', marginBottom: '8px', display: 'block' }}>
-              Execution Time
-            </label>
-            <input 
-              type="time"
-              value={time}
-              onChange={(e) => setTime(e.target.value)}
-              style={{
-                width: '100%',
-                background: 'rgba(255,255,255,0.05)',
-                border: `1px solid ${THEME.border}`,
-                borderRadius: '18px',
-                padding: '16px 20px',
-                color: '#fff',
-                fontSize: '16px',
-                outline: 'none',
-                colorScheme: 'dark'
-              }}
-            />
-          </div>
-
-          <motion.button 
-            whileTap={{ scale: 0.97 }}
-            onClick={handleSetReminder}
-            style={{
-              width: '100%',
-              background: `linear-gradient(135deg, ${THEME.accent}, #1e40af)`,
-              padding: '18px',
-              borderRadius: '20px',
-              border: 'none',
-              color: 'white',
-              fontWeight: 700,
-              fontSize: '14px',
-              letterSpacing: '1px',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '10px',
-              boxShadow: '0 10px 30px rgba(37, 99, 235, 0.3)'
-            }}
-          >
-            <Plus size={18} />
-            SCHEDULE TASK
-          </motion.button>
-        </section>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+          <input placeholder="What needs to be done?" value={note} onChange={(e) => setNote(e.target.value)} style={{ width: '100%', background: 'rgba(255,255,255,0.05)', border: `1px solid ${THEME.border}`, borderRadius: '16px', padding: '16px', color: '#fff', outline: 'none' }} />
+          <input type="time" value={time} onChange={(e) => setTime(e.target.value)} style={{ width: '100%', background: 'rgba(255,255,255,0.05)', border: `1px solid ${THEME.border}`, borderRadius: '16px', padding: '16px', color: '#fff', outline: 'none', colorScheme: 'dark' }} />
+          <button onClick={handleSetReminder} style={{ width: '100%', background: THEME.accent, padding: '16px', borderRadius: '16px', border: 'none', color: 'white', fontWeight: 700, cursor: 'pointer' }}>
+            SET ZEN REMINDER
+          </button>
+        </div>
       </motion.div>
 
+      {/* Scheduled List Section */}
+      <div style={{ width: '100%', maxWidth: '420px', marginTop: '32px', zIndex: 10 }}>
+        <h2 style={{ fontSize: '12px', fontWeight: 700, color: THEME.accent, letterSpacing: '2px', textTransform: 'uppercase', marginBottom: '16px', paddingLeft: '8px' }}>
+          Scheduled Services
+        </h2>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+          <AnimatePresence>
+            {reminders.map((r) => (
+              <motion.div key={r.id} initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, scale: 0.9 }} style={{ background: 'rgba(255,255,255,0.02)', border: `1px solid ${THEME.border}`, borderRadius: '20px', padding: '16px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div>
+                  <p style={{ margin: 0, fontSize: '15px', fontWeight: 600 }}>{r.note}</p>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '4px', color: THEME.textSecondary, fontSize: '12px' }}>
+                    <Clock size={12} /> {r.time}
+                  </div>
+                </div>
+                <button onClick={() => deleteReminder(r.id)} style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', padding: '8px' }}>
+                  <Trash2 size={18} />
+                </button>
+              </motion.div>
+            ))}
+          </AnimatePresence>
+          {reminders.length === 0 && (
+            <p style={{ textAlign: 'center', color: THEME.textSecondary, fontSize: '14px', marginTop: '20px' }}>No active notifications.</p>
+          )}
+        </div>
+      </div>
+
+      <footer style={{ marginTop: 'auto', paddingTop: '40px', color: THEME.textSecondary, fontSize: '11px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+        ZEN-NOTIS ARCHITECTURE | <Github size={12} /> bedro95
+      </footer>
+
+      {/* Success Toast */}
       <AnimatePresence>
         {isSuccess && (
-          <motion.div 
-            initial={{ y: -100, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            exit={{ y: -100, opacity: 0 }}
-            style={{
-              position: 'fixed',
-              top: '30px',
-              zIndex: 100,
-              background: 'rgba(255, 255, 255, 0.1)',
-              backdropFilter: 'blur(20px)',
-              padding: '12px 24px',
-              borderRadius: '24px',
-              border: '1px solid rgba(255, 255, 255, 0.2)',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '12px',
-              boxShadow: '0 20px 40px rgba(0,0,0,0.5)'
-            }}
-          >
-            <CheckCircle2 size={20} color="#10b981" />
-            <span style={{ fontWeight: 600, fontSize: '14px' }}>Reminder Optimized & Saved</span>
+          <motion.div initial={{ y: 50, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 50, opacity: 0 }} style={{ position: 'fixed', bottom: '30px', background: 'rgba(16, 185, 129, 0.2)', backdropFilter: 'blur(10px)', border: '1px solid #10b981', padding: '12px 24px', borderRadius: '20px', display: 'flex', alignItems: 'center', gap: '10px', zIndex: 100 }}>
+            <CheckCircle2 size={18} color="#10b981" />
+            <span style={{ fontSize: '14px', fontWeight: 600 }}>Optimized & Scheduled</span>
           </motion.div>
         )}
       </AnimatePresence>
-
-      <footer style={{ marginTop: '40px', color: THEME.textSecondary, fontSize: '12px', fontWeight: 500, display: 'flex', alignItems: 'center', gap: '8px' }}>
-        ZEN-NOTIS ARCHITECTURE | 
-        <a href="https://github.com/bedro95" target="_blank" rel="noopener noreferrer" style={{ display: 'flex', alignItems: 'center', gap: '4px', color: THEME.textSecondary, textDecoration: 'none' }}>
-          <Github size={14} /> bedro95
-        </a>
-      </footer>
     </main>
   );
 }
