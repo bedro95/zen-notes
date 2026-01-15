@@ -1,0 +1,17 @@
+{
+  "name": "Zen Notis",
+  "short_name": "ZenNotis",
+  "description": "Luxury Glassmorphism Reminders",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#050505",
+  "theme_color": "#2563eb",
+  "icons": [
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/552/552402.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
