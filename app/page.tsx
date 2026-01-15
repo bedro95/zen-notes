@@ -1,3 +1,21 @@
+  useEffect(() => {
+    // 1. Register Service Worker
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/sw.js').then((reg) => {
+        console.log('SW Registered!', reg);
+      });
+    }
+
+    // 2. Request Notification Permission
+    if ('Notification' in window) {
+      Notification.requestPermission().then(permission => {
+        if (permission === 'granted') {
+          console.log('Notification permission granted.');
+        }
+      });
+    }
+  }, []);
+
 "use client";
 
 import React, { useState, useEffect } from 'react';
