@@ -1,7 +1,7 @@
 {
   "name": "Zen Notis",
   "short_name": "ZenNotis",
-  "description": "Luxury Glassmorphism Reminders",
+  "description": "Luxury Glassmorphism Reminders for Focused Individuals",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#050505",
@@ -13,6 +13,12 @@
       "sizes": "any",
       "type": "image/svg+xml",
       "purpose": "any maskable"
+    },
+    {
+      "src": "/icon.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any"
     }
   ]
 }
