@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Bell, Clock, Plus, Shield, CheckCircle2 } from 'lucide-react';
+import { Bell, Clock, Plus, Shield, CheckCircle2, Github } from 'lucide-react'; // Added Github icon
 
 // --- Engineering Constants & Types ---
 interface Reminder {
@@ -27,29 +27,76 @@ export default function ZenNotisApp() {
   const [note, setNote] = useState<string>('');
   const [time, setTime] = useState<string>('');
   const [isSuccess, setIsSuccess] = useState<boolean>(false);
-  const [reminders, setReminders] = useState<Reminder[]>([]);
+  const [reminders, setReminders] = useState<Reminder[]>([]); // Preserving this state as it might be used later
 
   // --- Logic Handlers ---
   const handleSetReminder = () => {
-    if (!note || !time) return;
+    if (!note || !time) {
+      // Optional: Add a subtle error animation or toast for empty fields
+      console.warn("Input fields cannot be empty.");
+      return;
+    }
 
-    const newReminder: Reminder = {
-      id: Math.random().toString(36).substr(2, 9),
-      note,
-      time,
-      createdAt: Date.now()
-    };
+    // 1. Calculate Target Time
+    const now = new Date();
+    const [hours, minutes] = time.split(':').map(Number);
+    const targetDate = new Date();
+    targetDate.setHours(hours, minutes, 0, 0); // Set seconds and milliseconds to 0
 
-    setReminders(prev => [newReminder, ...prev]);
+    // If target time is in the past, set for the next day
+    if (targetDate.getTime() <= now.getTime()) {
+      targetDate.setDate(targetDate.getDate() + 1);
+    }
+
+    const timeUntilTrigger = targetDate.getTime() - now.getTime(); // Time in milliseconds
+
+    // 2. Schedule Local HTML5 Notification
+    // This will trigger an alert/vibration when the time comes
+    const timeoutId = setTimeout(() => {
+      // Check if Notification API is supported
+      if ('Notification' in window && Notification.permission === 'granted') {
+        new Notification("Zen Notis Reminder", {
+          body: note,
+          icon: '/icon.png', // Ensure you have an icon.png in public folder
+          vibrate: [200, 100, 200, 100, 200] // Custom vibration pattern
+        });
+      } else if ('vibrate' in navigator) {
+        // Fallback for non-granted permission or browser without Notification API
+        navigator.vibrate([200, 100, 200]);
+        alert(`🔔 Zen Notis: ${note}`); // Fallback alert
+      } else {
+        alert(`🔔 Zen Notis: ${note}`); // Final fallback
+      }
+    }, timeUntilTrigger);
+
+    // 3. Update UI State for Success Toast
     setIsSuccess(true);
     
-    // Reset fields
+    // Clear input fields only after successful scheduling
     setNote('');
     setTime('');
 
-    // Auto-hide success toast
+    // Auto-hide success toast after 4 seconds
     setTimeout(() => setIsSuccess(false), 4000);
+    
+    // Log for debugging and confirmation
+    console.log(`Reminder Scheduled: "${note}" for ${time} (Trigger in ${timeUntilTrigger / 1000} seconds)`);
   };
+
+  // --- Component Mount Effect for Notification Permission ---
+  useEffect(() => {
+    // Request notification permission on app load for a better UX
+    if ('Notification' in window) {
+      Notification.requestPermission().then(permission => {
+        if (permission === 'granted') {
+          console.log("Notification permission granted on load.");
+        } else {
+          console.warn("Notification permission denied or not supported.");
+        }
+      });
+    }
+  }, []); // Run only once on component mount
+
 
   return (
     <main style={{ 
@@ -214,8 +261,26 @@ export default function ZenNotisApp() {
         )}
       </AnimatePresence>
 
-      <footer style={{ marginTop: '40px', color: THEME.textSecondary, fontSize: '12px', fontWeight: 500, letterSpacing: '1px' }}>
+      {/* Footer with GitHub Profile Link */}
+      <footer style={{ marginTop: '40px', color: THEME.textSecondary, fontSize: '12px', fontWeight: 500, letterSpacing: '1px', display: 'flex', alignItems: 'center', gap: '8px' }}>
         POWERED BY ZEN-NOTIS ARCHITECTURE
+        <a 
+          href="https://github.com/bedro95" 
+          target="_blank" 
+          rel="noopener noreferrer"
+          style={{ 
+            display: 'flex', 
+            alignItems: 'center', 
+            gap: '4px', 
+            color: THEME.textSecondary, 
+            textDecoration: 'none',
+            transition: 'color 0.3s ease'
+          }}
+          onMouseOver={(e) => (e.currentTarget.style.color = THEME.accent)}
+          onMouseOut={(e) => (e.currentTarget.style.color = THEME.textSecondary)}
+        >
+          <Github size={16} /> bedro95
+        </a>
       </footer>
     </main>
   );
