@@ -1,26 +1,15 @@
-  useEffect(() => {
-    // 1. Register Service Worker
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('/sw.js').then((reg) => {
-        console.log('SW Registered!', reg);
-      });
-    }
-
-    // 2. Request Notification Permission
-    if ('Notification' in window) {
-      Notification.requestPermission().then(permission => {
-        if (permission === 'granted') {
-          console.log('Notification permission granted.');
-        }
-      });
-    }
-  }, []);
-
 "use client";
 
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Bell, Clock, Plus, Shield, CheckCircle2, Github, Trash2 } from 'lucide-react';
+
+// --- Engineering Constants & Types ---
+interface Reminder {
+  id: string;
+  note: string;
+  time: string;
+}
 
 const THEME = {
   background: '#050505',
@@ -32,18 +21,26 @@ const THEME = {
   blur: 'blur(40px)'
 };
 
-interface Reminder {
-  id: string;
-  note: string;
-  time: string;
-}
-
 export default function ZenNotisApp() {
   const [note, setNote] = useState<string>('');
   const [time, setTime] = useState<string>('');
   const [isSuccess, setIsSuccess] = useState<boolean>(false);
   const [reminders, setReminders] = useState<Reminder[]>([]);
 
+  // --- Initial System Setup ---
+  useEffect(() => {
+    // Register Service Worker for background notifications
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/sw.js').catch(err => console.log("SW Reg failed", err));
+    }
+
+    // Request system notification permission
+    if ('Notification' in window) {
+      Notification.requestPermission();
+    }
+  }, []);
+
+  // --- Core Functions ---
   const handleSetReminder = () => {
     if (!note || !time) return;
 
@@ -53,18 +50,24 @@ export default function ZenNotisApp() {
       time
     };
 
-    // Logical Trigger (Simulated for Demo)
     const now = new Date();
     const [h, m] = time.split(':').map(Number);
     const target = new Date();
     target.setHours(h, m, 0, 0);
     if (target <= now) target.setDate(target.getDate() + 1);
 
+    // Notification Scheduling Engine
     setTimeout(() => {
-      if ('vibrate' in navigator) navigator.vibrate([200, 100, 200]);
-      if ('Notification' in window && Notification.permission === 'granted') {
-        new Notification("Zen Notis", { body: note });
-      } else {
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.ready.then((registration) => {
+          registration.showNotification("Zen Notis Reminder", {
+            body: note,
+            icon: "/icon.svg",
+            vibrate: [200, 100, 200]
+          });
+        });
+      } else if ('vibrate' in navigator) {
+        navigator.vibrate([200, 100, 200]);
         alert(`🔔 Reminder: ${note}`);
       }
     }, target.getTime() - now.getTime());
@@ -83,16 +86,17 @@ export default function ZenNotisApp() {
   return (
     <main style={{ backgroundColor: THEME.background, minHeight: '100vh', color: THEME.textPrimary, fontFamily: 'Inter, sans-serif', display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '40px 24px', position: 'relative', overflowX: 'hidden' }}>
       
-      {/* Glow Effect */}
+      {/* Background Ambient Glow */}
       <div style={{ position: 'absolute', top: '-10%', right: '-5%', width: '400px', height: '400px', background: 'rgba(37, 99, 235, 0.1)', filter: 'blur(100px)', borderRadius: '100%' }} />
 
-      {/* Main Form Card */}
+      {/* Main Glass Card */}
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} style={{ width: '100%', maxWidth: '420px', background: THEME.glass, backdropFilter: THEME.blur, WebkitBackdropFilter: THEME.blur, border: `1px solid ${THEME.border}`, borderRadius: '40px', padding: '40px', boxShadow: '0 40px 100px rgba(0,0,0,0.6)', zIndex: 10 }}>
         <header style={{ marginBottom: '32px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <h1 style={{ fontSize: '28px', fontWeight: 800, letterSpacing: '-1px', margin: 0 }}>Zen Notis</h1>
             <Shield size={24} color={THEME.accent} />
           </div>
+          <p style={{ color: THEME.textSecondary, fontSize: '13px', marginTop: '4px' }}>Senku Architecture Project</p>
         </header>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
@@ -104,10 +108,10 @@ export default function ZenNotisApp() {
         </div>
       </motion.div>
 
-      {/* Scheduled List Section */}
+      {/* Services/Reminders List */}
       <div style={{ width: '100%', maxWidth: '420px', marginTop: '32px', zIndex: 10 }}>
         <h2 style={{ fontSize: '12px', fontWeight: 700, color: THEME.accent, letterSpacing: '2px', textTransform: 'uppercase', marginBottom: '16px', paddingLeft: '8px' }}>
-          Scheduled Services
+          Active Services
         </h2>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
           <AnimatePresence>
@@ -126,7 +130,7 @@ export default function ZenNotisApp() {
             ))}
           </AnimatePresence>
           {reminders.length === 0 && (
-            <p style={{ textAlign: 'center', color: THEME.textSecondary, fontSize: '14px', marginTop: '20px' }}>No active notifications.</p>
+            <p style={{ textAlign: 'center', color: THEME.textSecondary, fontSize: '14px', marginTop: '20px' }}>System idle. No active tasks.</p>
           )}
         </div>
       </div>
@@ -135,7 +139,7 @@ export default function ZenNotisApp() {
         ZEN-NOTIS ARCHITECTURE | <Github size={12} /> bedro95
       </footer>
 
-      {/* Success Toast */}
+      {/* Floating Success HUD */}
       <AnimatePresence>
         {isSuccess && (
           <motion.div initial={{ y: 50, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 50, opacity: 0 }} style={{ position: 'fixed', bottom: '30px', background: 'rgba(16, 185, 129, 0.2)', backdropFilter: 'blur(10px)', border: '1px solid #10b981', padding: '12px 24px', borderRadius: '20px', display: 'flex', alignItems: 'center', gap: '10px', zIndex: 100 }}>
